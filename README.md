@@ -5,6 +5,11 @@ We'll build our own dataset of daily data for the Global X Artificial Intelligen
 
 ## Dataset
 
+In order to actually retrieve the datasets, we are using yfinance, the API directly connecting to Yahoo Finance.
+
+yahooFinance.py --> used to pull raw data for AIQ, QQQ, SMH, VIX
+featureCreation.py --> creates features from csv datasets
+
 ### Features
 **AIQ's own behavior**
 1. 1-day return (today's move)
@@ -17,12 +22,12 @@ We'll build our own dataset of daily data for the Global X Artificial Intelligen
 8. RSI (Relative Strength Index from last 14 trading days)
 9. Relative volume (today's volume / 20-day average)
 
-**Market context**
+**Market context** 
 10. QQQ 1-day return
 11. VIX level
 12. VIX 1-day change
 
-**AI-sector signal**
+**AI-sector signal** 
 13. SMH 1-day return (semiconductors)
 
 ### Target
