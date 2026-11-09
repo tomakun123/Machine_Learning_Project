@@ -21,12 +21,11 @@ aiq['20D_Volatility'] = aiq['Close'].pct_change().rolling(window=20).std()
 # Feature 5 --> distance from 50 day moving average
 aiq['Dist_50D_MA'] = (aiq['Close'] / aiq['Close'].rolling(window=50).mean()) - 1
 
-# Feature 6 --> Signed up-day streak
-sign = aiq['1D_Return'].apply(lambda x: 1 if x > 0 else (-1 if x < 0 else 0))
-
-changed = (sign != sign.shift(1))
-run_id = changed.cumsum()
-aiq['Up_Day_Streak'] = (sign.groupby(run_id).cumcount() + 1) * sign
+# Feature 6 --> Signed up-day streak --> most confusing feature to implement
+sign = aiq['1D_Return'].apply(lambda x: 1 if x > 0 else (-1 if x < 0 else 0)) # Turns each day's return (direction) into a sign (1, -1, or 0)
+changed = (sign != sign.shift(1)) # lines up each day with previous days direction and compares
+run_id = changed.cumsum() # counts flips as it goes down on column (True = 1, False = 0) and cumulatively sums to create a unique ID for each streak
+aiq['Up_Day_Streak'] = (sign.groupby(run_id).cumcount() + 1) * sign # takes the unique streak ID and counts how many days in a row the streak has been going, then multiplies by the sign to get a signed streak count
 
 
 # Feature 7 --> Overnight gap (today's open vs yesterday's close)
