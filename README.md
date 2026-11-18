@@ -35,7 +35,9 @@ featureCreation.py --> creates features from csv datasets
 
 ---
 
-## A. Introduction
+## A. Abstract
+
+## B. Introduction
 
 ### The Dataset
 
@@ -104,3 +106,6 @@ Stock data is ordered in time, so we will split it **chronologically**: we train
 3. **It compares different kinds of signals.** Our features combine the asset's own history (momentum, mean reversion and volume) with outside market context. That lets us test which kind of information actually carries predictive value, and whether non-linear models find patterns that a linear model misses.
 4. **It spans very different market regimes.** The 2018–2026 window includes the 2018 sell-off, the COVID-19 crash and recovery in 2020, the 2022 bear market, and the AI boom that followed. A model has to generalize across all of these rather than memorize one environment.
 5. **It has practical value.** Short-term direction forecasts feed into trading strategies, hedging decisions and risk management. Even a small, consistent edge, combined with careful evaluation, is what quantitative finance is built on.
+
+
+## C. Exploratory & Unsupervised Analysis
