@@ -8,6 +8,19 @@ import matplotlib.pyplot as plt
 Site I used for reference: https://www.geeksforgeeks.org/data-analysis/data-preprocessing-machine-learning-python/
 '''
 
+def split_data(df, test_year=2025):
+    df = df.sort_index()  # Ensure the DataFrame is sorted by date
+    
+    train_df = df[ df.index.year < test_year ] 
+    test_df = df[ df.index.year >= test_year ] 
+
+    # Ranges (report it in the write-up)
+    print(f"Train: {train_df.index.min().date()} to {train_df.index.max().date()} ({len(train_df)} rows)")
+    print(f"Test:  {test_df.index.min().date()} to {test_df.index.max().date()} ({len(test_df)} rows)")
+
+    return train_df, test_df
+
+
 def preprocessing(df): # df is the dataset created in featureCreation.py
             #       Data Preprocessing    #
             #       Feature Scaling       #
@@ -39,7 +52,7 @@ def preprocessing(df): # df is the dataset created in featureCreation.py
         'Up_Day_Streak', 'Overnight_Gap', 
         'RSI', 'Rel_Volume', 'QQQ_1D_Return', 
         'VIX_Level', 'VIX_1D_Change', 
-        'SMH_1D_Return', 'Target'
+        'SMH_1D_Return'
         ]
 
     for feature in features:
@@ -64,3 +77,5 @@ def preprocessing(df): # df is the dataset created in featureCreation.py
 
     y = df['Target'] #--> Grab target as seperate column
     x = df.drop(columns=['Target']) # remove target from features
+
+    return df
