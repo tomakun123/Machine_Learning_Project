@@ -109,3 +109,119 @@ Stock data is ordered in time, so we will split it **chronologically**: we train
 
 
 ## C. Exploratory & Unsupervised Analysis
+
+### Figures ###
+1. correlation_matrix.png
+2. feature_distributions
+3. features_by_target
+4. up_rate_by_decile
+
+#### Correlation Matrix Findings
+
+**How to read the matrix**
+Each cell is the Pearson correlation (r) between two variables, ranging from -1 to +1.
+
+| r | Meaning |
+|---|---|
+| +1 | Perfect positive linear relationship --> if one goes up, the other goes up proportionally |
+| 0 | No *linear* relationship (a nonlinear relationship could still exist) |
+| -1 | Perfect negative linear relationship --> if one goes up, the other goes down proportionally |
+
+- **Sign** = direction
+- **size** = strength
+- **Redundancy:** features with |r| > ~0.7 (positive *or* negative) carry mostly the same information --> aka multicollinearity
+- **Noise threshold:** with n = 2,082 rows, any |r| < ~0.044 (2/sqrt(n)) is indistinguishable from 0
+- The diagonal is always 1 (each variable vs itself, so perfect pos. lin. relationship), and the matrix is symmetric, so only the lower triangle is shown
+
+**Feature vs feature: noticeable patterns**
+1. **Same-day market move**
+    - AIQ / QQQ / SMH 1-day returns: r = 0.87 to 0.93
+    - All three are strongly negative with VIX 1-day change (r = -0.64 to -0.71) --> stocks up = fear down
+    - Overnight gap also belongs here (r = 0.58 to 0.65), since the gap is part of the day's return
+    - AIQ vs QQQ = 0.93 because their holdings overlap heavily (big tech)
+2. **Medium-term trend**
+    - 20-day return / Dist_50D_MA / RSI: r = 0.74 to 0.87
+    - All three measure the same thing: "has the price been rising over the past few weeks?"
+3. **Volatility / fear**
+    - 20-day volatility vs VIX level: r = 0.68
+    - Moderately negative with the trend group (r = -0.26 to -0.47) --> uptrends are calm while sell-offs are volatile
+
+**Feature vs target (last row)**
+- Every |r| <= 0.04, below the noise threshold
+- No single feature has a linear relationship with next-day direction
+
+**Decisions this led to**
+- **Redundancy** --> L2 regularization in logistic regression (and/or replace AIQ's 1-day return with its excess return over QQQ, or use PCA)
+- **No linear signal** --> expect results near 54.8% baseline (found in target balance) --> try nonlinear models (RBF SVM, neural net), since Pearson only detects straight-line relationships
+
+#### Feature Distributions
+**Bell-shaped vs skewed**
+- Bell-shaped (symmetric) --> values cluster in the middle, thin out evenly on both sides, extremes are rare (minimal outliers)
+- Skewed --> values pile up on one side with a long tail on the other
+    - Right skew --> long tail to the right (a few very large values)
+    - Left skew --> long tail to the left (a few very negative values)
+- Rule of thumb: |skew| < 0.5 symmetric, 0.5 to 1 moderate, > 1 strong
+- Note: x-axis is trimmed to the 0.5th to 99.5th percentile --> most extreme days are hidden (COVID crash / Fed meetings / tariff announcements); skew is computed on ALL data
+
+  - **Roughly bell-shaped (|skew| < 0.5)** --> AIQ 1D / 5D / 20D return, Dist_50D_MA, RSI, QQQ 1D return, SMH 1D return
+  - **Strongly right-skewed** --> Rel_Volume (4.60), VIX_Level (2.81), VIX_1D_Change (2.06), 20D_Volatility (1.81)
+  - **Left-skewed by one outlier** --> Overnight_Gap (-2.00), from the -16.6% COVID gap (2020-03-16), hidden by the trimmed axis
+  - **Discrete** --> Up_Day_Streak: counts, almost no 0s, each step outward ~half as common; range -8 to +14
+  - **Target** --> 54.8% up / 45.2% down | baseline = 54.8%
+
+**Why skew is a problem** --> extreme tail days dominate distances (SVM) and weights (LR, NN) --> most days get squeezed together
+
+**Scale problem** --> std ranges from 0.0067 (20D_Volatility) to 16.3 (RSI), need to standardize data to have everything fit in same "space"
+
+**Decisions this led to** (order: log --> clip --> standardize)
+1. Log transform right-skewed features --> log(x): Rel_Volume, VIX_Level, 20D_Volatility; log1p(x): VIX_1D_Change (can be negative)
+2. Clip all features at train-set 1st/99th percentiles (handles Overnight_Gap outlier without deleting the day) --> Up_Day_Streak instead clipped to +/-5
+3. Standardize (z = (x - mean) / std) --> every feature mean 0, std 1; fit on train only
+    --> IMPORTANT: standardizing changes scale, NOT shape, which is why steps 1-2 come first
+4. No resampling --> no need to change how many examples each class has since data is relatively balanced (1140 up, 942 down), and creates the baseline for us, as well as each day being important
+
+#### Features By Target
+**How to read it**
+- each panel splits days by what happened **next**: before an Up day (blue) vs before a Down day (orange); dashed = class mean
+- If feature is predictive --> two curves would be separated
+- t-test, p-value --> chance of seeing this big a gap between the Up and Down means from random noise alone --> p < 0.05 = significant
+
+**Findings**
+- Curves overlap almost completely in every panel --> class means are nearly identical
+- All 13 p-values > 0.05 --> no feature's mean differs significantly before Up vs Down days
+    - Closest: Overnight_Gap (p = 0.066) --> tells us (not confidently) that days opening with a bigger gap up were slightly more likely to be followed by a down day
+- No nonlinear signal either --> unlike correlation, the full distributions would show differences in shape (not just mean) between Up and Down days, yet the curves match almost exactly. Confirms the correlation matrix's target row are all |r| <= 0.04
+
+**Decisions this led to**
+- No single feature separates the classes --> any signal must come from feature *combinations*, which opens the discussion to nonlinear models (RBF SVM, neural net) even more
+- Keep all features (none stand out to keep or drop based on this figure) --> results will probabilty stay close to baseline of 54.8%
+
+#### Up Rate By Decile
+**How to read it**
+1. Sort all 2,082 days by that feature's value, lowest to highest.
+2. Split them into 10 equal groups called deciles, about 208 days each.
+    - --> Decile 1 = the 10% of days with the lowest values.
+    - --> Decile 10 = the 10% with the highest values.
+3. For each group, the bar shows what % of those days were followed by an up day.
+
+In summary, each bar is a representation of: when this feature was in a given 10% slice of its values, how often did AIQ close up the next day?
+
+| Pattern across deciles 1 --> 10 | Meaning |
+|---|---|
+| **Staircase going up** | Higher values --> more Up days the next day (positive relationship) |
+| **Staircase going down** | Higher values --> more Down days the next day (negative relationship) |
+| **U-shape (high at both ends, low in the middle)** | Extreme values in *either* direction matter --> nonlinear, which correlation would miss |
+| **Upside-down U** | Middle values matter, extremes don't --> also nonlinear |
+| **Only one end differs** | Threshold effect, e.g. "only the most extreme 10% of days matter" |
+| **Random bumps around the dashed line, no shape** | No relationship, just noise |
+
+**Findings**
+- Every bar stays close to the 54.8% base rate (between ~47% and ~61.5%)
+- No panel shows a staircase, U-shape, or threshold effect --> bars jump up and down between neighboring deciles instead of following a pattern (makes sense since there are no real patterns in markets)
+    - Faint hints (ex. RSI deciles 1 vs 10) are likely noise and can't be accounted for as solid evidence
+- Confirms no single feature predicts next-day direction, linearly or nonlinearly
+
+**Decisions this led to**
+- Preprocessing unchanged --> deciles are rank-based, and log/clip/standardize preserve rank order (done in preprocessing)
+  - IMPORTANT: preprocessing makes features usable but cannot create signal
+- Any signal must come from feature combinations (as shown in other graphs as well) 
