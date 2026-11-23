@@ -1,38 +1,26 @@
 from yahooFinance import download_data
 from featureCreation import feature_creation
-from data_preprocessing import preprocessing, split_data
+from data_preprocessing import preprocessing
 
 def main():
-    features = [
-            '1D_Return', '5D_Return', '20D_Return', 
-            '20D_Volatility', 'Dist_50D_MA', 
-            'Up_Day_Streak', 'Overnight_Gap', 
-            'RSI', 'Rel_Volume', 'QQQ_1D_Return', 
-            'VIX_Level', 'VIX_1D_Change', 
-            'SMH_1D_Return'
-            ]
 
     download_data() # retrieves data from Yahoo Finance and saves as CSV files in /Datasets
 
-    df = feature_creation()
+    df = feature_creation() # Create features based on CSV files downlaoded in /Datasets and output Model_Dataset.csv
     print("df", df.head())
 
     '''
-    Preprocess data + Split data into train/validate & test sets by year (2025 is default)
+    Preprocess data (data_preprocess.py) --> returns split data with following changes:
+        1. Check for missing values and data types of each column
+        2. Log transformations (log(x): Rel_Volume, VIX_Level, 20D_Volatility; log1p(x): VIX_1D_Change (can be negative)) --> found from feature distributions
+        3. Split data into train (2024 > year), validation (2024), testing (2025 <= year)
+        4. clip with train bounds (cap on extreme values so it doesn't blow up data) --> found from feature distributions
+        5. Standardize data into mean=0, SD=1 to ensure features stand equally, and one doesn't blow up the data
     '''
-    pp_df = preprocessing(df)
-    train_df, test_df = split_data(pp_df, 2025)
-    print("pre_processed_data: ", pp_df.head(), 
-          "train: ", train_df.head(), 
-          "test: ", test_df.head())
+    X_train, X_validate, X_test, y_train, y_validate, y_test = preprocessing(df)
 
-    x_train, y_train = train_df[features], train_df['Target']
-    x_test,  y_test  = test_df[features],  test_df['Target']
+    # Section D: train models
 
-    '''
-    Now scaling will be added later
-    '''
-    # results = train_models(*splits)        # step 3: add later for Section D
 
 if __name__ == "__main__":
     main()

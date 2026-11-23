@@ -1,6 +1,6 @@
 yfinance
 pandas
-scikit-learn
 numpy
-seaborn
 matplotlib
+seaborn
+scipy
