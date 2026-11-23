@@ -84,8 +84,18 @@ def preprocessing(dfo): # df is the dataset created in featureCreation.py
      - allows each feature to be in similar ranges, 
     '''
     scaler = StandardScaler() # empty scalar, using fit_transform to populate it
-    X_train    = scaler.fit_transform(X_train)   # fit_transform --> compute each feature's mean and standard deviation from given data and store it
-    X_validate = scaler.transform(X_validate)    # transform --> apply stored mean and std to convert data with z = (x − mean) / std 
-    X_test     = scaler.transform(X_test)
+    # StandardScaler returns NumPy arrays, which drop the column names and dates so we wrap it in a DataFrame
+    X_train    = pd.DataFrame(scaler.fit_transform(X_train), columns=features, index=X_train.index) # fit_transform --> compute each feature's mean and standard deviation from given data and store it
+    X_validate = pd.DataFrame(scaler.transform(X_validate),  columns=features, index=X_validate.index) # transform --> apply stored mean and std to convert data with z = (x − mean) / std 
+    X_test     = pd.DataFrame(scaler.transform(X_test),      columns=features, index=X_test.index)
+
+    
+    # save the post-processed data for inspection only (the models use the returned variables)
+    processed = pd.concat([
+        X_train.assign(Target=y_train, Split="train"),
+        X_validate.assign(Target=y_validate, Split="validate"),
+        X_test.assign(Target=y_test, Split="test"),
+    ])
+    processed.to_csv("Datasets/Preprocessed_Dataset.csv")
 
     return X_train, X_validate, X_test, y_train, y_validate, y_test
