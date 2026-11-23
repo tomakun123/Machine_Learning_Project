@@ -4,6 +4,9 @@ from sklearn.preprocessing import StandardScaler
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+pd.set_option('display.max_columns', None) # avoids cutting columns off early when printing
+pd.set_option('display.width', 200) # sets character limit to 200 on wideness when printing
+
 '''
 Site I used for reference: https://www.geeksforgeeks.org/data-analysis/data-preprocessing-machine-learning-python/
 '''
@@ -97,5 +100,8 @@ def preprocessing(dfo): # df is the dataset created in featureCreation.py
         X_test.assign(Target=y_test, Split="test"),
     ])
     processed.to_csv("Datasets/Preprocessed_Dataset.csv")
+
+    print("Preprocessed dataset (first rows):\n", processed.head())
+    print("X_train summary (should be mean 0, std 1):\n", X_train.describe())
 
     return X_train, X_validate, X_test, y_train, y_validate, y_test
