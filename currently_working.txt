@@ -1,6 +1,0 @@
-C. 
-Exploratory & Unsupervised Analysis
-•  Visualize feature distributions  (e.g.,  histograms,  density  plots), relationships withthe target, and correlation matrix  to show relationships between features --> Evan
-•  Optional  (Very  Small  Extra  Credit):   Apply  unsupervised  methods  (for  example:PCA for dimensionality reduction or K-means clustering to uncover structure). --> Maybe later
-•  Document and interpret any patterns or structure you discover — if you found none,still describe what you attempted. --> Evan (since it connects with visualizing)
-• Preprocess your data:  handle missing values, scale features, consider other transfor-mations (e.g., log, power for skewed data). --> Thomas
